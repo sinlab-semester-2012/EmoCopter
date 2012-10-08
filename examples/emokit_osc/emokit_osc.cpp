@@ -29,7 +29,7 @@ int main(int argc, char* argv[])
 	signal(SIGQUIT, sigproc);
 #endif
 
-    //UdpTransmitSocket transmitSocket( IpEndpointName( ADDRESS, PORT ) );
+    UdpTransmitSocket transmitSocket( IpEndpointName( ADDRESS, PORT ) );
     
     char buffer[OUTPUT_BUFFER_SIZE];
 
@@ -84,7 +84,7 @@ int main(int argc, char* argv[])
 			
 			fflush(output);
 			
-			/*osc::OutboundPacketStream p( buffer, OUTPUT_BUFFER_SIZE );
+			osc::OutboundPacketStream p( buffer, OUTPUT_BUFFER_SIZE );
 			p << osc::BeginBundleImmediate
 			  << osc::BeginMessage( "/emokit/channels" )
 			  << frame.F3 << frame.FC6 << frame.P7 << frame.T8 << frame.F7 << frame.F8 << frame.T7 << frame.P8 << frame.AF4 << frame.F4 << frame.AF3 << frame.O2 << frame.O1 << frame.FC5 << osc::EndMessage
@@ -92,7 +92,7 @@ int main(int argc, char* argv[])
 			  << frame.gyroX << frame.gyroY << osc::EndMessage
 			  << osc::EndBundle;
     
-			transmitSocket.Send( p.Data(), p.Size() );*/
+			transmitSocket.Send( p.Data(), p.Size() );
 		}
 	}
 

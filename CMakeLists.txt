@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 2.6)
-PROJECT(emokit)
+PROJECT(emocopter)
 
 SET(BUILD_SHARED_LIBS true)
 
@@ -25,11 +25,12 @@ ENDIF(WIN32)
 SET(LIBS ${Mcrypt_LIBS} ${LIBUSB_1_LIBRARIES})
 
 MESSAGE(STATUS ${LIBS})
-INCLUDE_DIRECTORIES(${Mcrypt_INCLUDE_DIR} ${libepoc_SOURCE_DIR}/include)
+INCLUDE_DIRECTORIES(${Mcrypt_INCLUDE_DIR} ${libepoc_SOURCE_DIR}/include ${OSC_SOURCE_DIR})
 LINK_DIRECTORIES(/usr/local/lib)
 
 ADD_SUBDIRECTORY(src)
 ADD_SUBDIRECTORY(examples/emokitd)
+ADD_SUBDIRECTORY(include/oscpack)
 ADD_SUBDIRECTORY(examples/emokit_osc)
 
 ##########################################

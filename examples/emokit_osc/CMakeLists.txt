@@ -4,7 +4,7 @@
 
 ADD_EXECUTABLE(emokit_osc emokit_osc.cpp)
 ADD_DEPENDENCIES(emokit_osc emokit)
-TARGET_LINK_LIBRARIES(emokit_osc emokit ${LIBS})
+TARGET_LINK_LIBRARIES(emokit_osc emokit ${LIBS} OSC)
 
 SET_TARGET_PROPERTIES(emokit_osc PROPERTIES
 	INSTALL_RPATH_USE_LINK_PATH TRUE

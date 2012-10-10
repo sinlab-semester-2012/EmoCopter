@@ -10,6 +10,8 @@ ELSE()
 ENDIF()
 target_link_libraries (emokit ${LIBS}) 
 
+INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/include)
+
 INSTALL (TARGETS emokit
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib

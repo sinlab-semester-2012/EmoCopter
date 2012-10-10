@@ -14,7 +14,7 @@ typedef struct waves
     double channels[14][EPOCH_SIZE];
     //Channel fourier transform 
     double filtered_channels[14][EPOCH_SIZE];
-    double epoch_values[14][EPOCH_AVERAGE];
+    double epoch_values[14][EPOCH_AVERAGE+1];	//contains averages over 128 values + 1 avg over the other 4
     //double final_values[14]
 
     double coefficients_alpha[2][8];

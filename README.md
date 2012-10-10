@@ -41,3 +41,6 @@ that differenciates one state from another. They are all related to certain brai
 activities like being relaxed, thinking of a simple concept or even moving your limbs.
 Having done that we will be able to assign states to commands and send them to whichever 
 device we like (the ARDrone in my case).
+
+Please note that this has only been tested on my linux machine, so it might not work 
+correctly on other systems - although I am always trying my best to make it portable.

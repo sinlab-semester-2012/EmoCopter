@@ -1,10 +1,11 @@
 ##################################################
-#                epoc daemon                   #
+#                emokit daemon                   #
 ##################################################
 
 add_executable (emokitd emokitd.c)
 ADD_DEPENDENCIES(emokitd emokit)
 target_link_libraries (emokitd emokit ${LIBS})
+INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/include)
 
 SET_TARGET_PROPERTIES(emokitd PROPERTIES
 	INSTALL_RPATH_USE_LINK_PATH TRUE

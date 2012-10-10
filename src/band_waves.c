@@ -1,6 +1,6 @@
 //TODO : average 4 last epoc
 
-#include "../include/band_waves.h"
+#include "band_waves.h"
 
 struct waves* make_new_waves()
 {	

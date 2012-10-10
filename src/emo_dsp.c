@@ -2,7 +2,7 @@
  * This header defines the methods to access the processed emokit input
  *
  */
-#include "../include/emokit/emo_dsp.h"
+#include "emokit/emo_dsp.h"
 #define max(a,b) (((a) > (b)) ? (a) : (b))
 #define min(a,b) (((a) < (b)) ? (a) : (b))
 

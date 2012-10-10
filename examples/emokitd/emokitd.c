@@ -9,7 +9,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "../../include/emokit/emokit.h"
+#include "emokit/emokit.h"
    
 
 int main(int argc, char **argv)

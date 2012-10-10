@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 2.6)
 PROJECT(OSC)
 
 INCLUDE_DIRECTORIES(
-	${CMAKE_DOURCE_DIR}
 	${OSC_SOURCE_DIR}
 	)
 

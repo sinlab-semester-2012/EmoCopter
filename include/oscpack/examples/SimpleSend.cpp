@@ -18,12 +18,14 @@ int main(int argc, char* argv[])
     char buffer[OUTPUT_BUFFER_SIZE];
     osc::OutboundPacketStream p( buffer, OUTPUT_BUFFER_SIZE );
     
-    p << osc::BeginBundleImmediate
-        << osc::BeginMessage( "/test1" ) 
-            << true << 23 << (float)3.1415 << "hello" << osc::EndMessage
-        << osc::BeginMessage( "/test2" ) 
-            << true << 24 << (float)10.8 << "world" << osc::EndMessage
-        << osc::EndBundle;
+    //~ p << osc::BeginBundleImmediate
+        //~ << osc::BeginMessage( "/test1" ) 
+            //~ << true << 23 << (float)3.1415 << "hello" << osc::EndMessage
+        //~ << osc::BeginMessage( "/test2" ) 
+            //~ << true << 24 << (float)10.8 << "world" << osc::EndMessage
+        //~ << osc::EndBundle;
+    p << osc::BeginMessage("haha")
+		<< "it works!" << osc::EndMessage;
     
     transmitSocket.Send( p.Data(), p.Size() );
 }

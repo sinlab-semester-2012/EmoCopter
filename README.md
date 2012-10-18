@@ -1,5 +1,6 @@
 EmoCopter
 =========
+by Vincent de Marignac
 
 A semester project proposed by sinlab at EPFL.
 
@@ -22,11 +23,15 @@ Required Libraries
 
 To compile the project you will need cmake version 2.6 or higher.
 Of course the requirements for emokit and oscpack are also regarding this project. 
-So libusb-1.0 and libmcrypt
+So libusb-1.0 and libmcrypt are a necessity if under linux. I do not know about 
+dependecies under any other platform yet.
 
 
 Where things are now
 ====================
+Please note that this has only been tested on my linux machine, so it might not work 
+correctly on other systems - although I am always trying my best to make it portable.
+
 
 2012.10.08
 ----------
@@ -42,5 +47,11 @@ activities like being relaxed, thinking of a simple concept or even moving your 
 Having done that we will be able to assign states to commands and send them to whichever 
 device we like (the ARDrone in my case).
 
-Please note that this has only been tested on my linux machine, so it might not work 
-correctly on other systems - although I am always trying my best to make it portable.
+2012.10.18
+----------
+I have been able to send OSC messages to a program in the Processing language. The problem 
+was actually very simple: the oscP5 library for Processing does not implement MessageBundle 
+yet, so you have to send messages one after the other instead of grouped inside a bundle...
+Now that I can send and receive messages, the information, unless it is a string, is badly 
+interpreted (probably due to type mistakes). The two OSC libraries (oscpack and oscP5) don't 
+seem to agree on type conventions??

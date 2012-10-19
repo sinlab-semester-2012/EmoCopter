@@ -55,3 +55,9 @@ yet, so you have to send messages one after the other instead of grouped inside 
 Now that I can send and receive messages, the information, unless it is a string, is badly 
 interpreted (probably due to type mistakes). The two OSC libraries (oscpack and oscP5) don't 
 seem to agree on type conventions??
+
+2012.10.19
+----------
+I just figured out the osc reading problem: endianness was set to big endian by default where 
+it should have been little endian.
+I added the Processing oscARDrone sketch to the example folder.

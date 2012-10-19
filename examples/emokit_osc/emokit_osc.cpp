@@ -52,8 +52,8 @@ int main(int argc, char* argv[])
 			
 			std::cout << "\r\33[2K" << "gyroX: " << (int)frame.gyroX
 				<< "; gyroY: " << (int)frame.gyroY
-				<< " " << frame.F3
-				<< " " << frame.FC6
+				<< "; F3: " << frame.F3
+				<< "; FC6: " << frame.FC6
 				<< "; battery: " << (d->battery-79)*100/40 << "%";
 			
 			flush(std::cout);
@@ -66,7 +66,7 @@ int main(int argc, char* argv[])
 			transmitSocket.Send( p.Data(), p.Size() );
 			
 			q << osc::BeginMessage( "/emokit/gyro" ) 
-			  << frame.gyroX << frame.gyroY << osc::EndMessage;
+			  << (int)frame.gyroX << (int)frame.gyroY << osc::EndMessage;
 			transmitSocket.Send( q.Data(), q.Size() );
 		}
 	}

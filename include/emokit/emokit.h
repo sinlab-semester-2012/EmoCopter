@@ -157,11 +157,11 @@ extern "C"
 	 * in device struct.
 	 *
 	 * @param s Initied, opened device
-	 * @param feature_report Feature report obtained from device
+	 * @param dev_type EMOKIT_CONSUMER or EMOKIT_RESEARCH
 	 *
 	 * @return 0 if successful, < 0 for error
 	 */
-	EMOKIT_DECLSPEC int emokit_get_crypto_key(emokit_device* s, const unsigned char* feature_report);
+	EMOKIT_DECLSPEC int emokit_get_crypto_key(emokit_device* s, int dev_type);
 	
 	/**
 	 * Put all sensor levels as well as battery and gyro in the next frame.

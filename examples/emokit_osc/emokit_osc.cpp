@@ -54,20 +54,27 @@ int main(int argc, char* argv[])
 				<< "; gyroY: " << (int)frame.gyroY
 				<< "; F3: " << frame.F3
 				<< "; FC6: " << frame.FC6
-				<< "; battery: " << (d->battery-79)*100/40 << "%";
+				<< "; battery: " << (int)d->battery << "%";
 			
 			flush(std::cout);
 			
-			osc::OutboundPacketStream p( buffer, OUTPUT_BUFFER_SIZE );
-			osc::OutboundPacketStream q( buffer, OUTPUT_BUFFER_SIZE );
+			osc::OutboundPacketStream channels( buffer, OUTPUT_BUFFER_SIZE );
+			osc::OutboundPacketStream gyro( buffer, OUTPUT_BUFFER_SIZE );
+			osc::OutboundPacketStream info( buffer, OUTPUT_BUFFER_SIZE );
 			
-			p << osc::BeginMessage( "/emokit/channels" )
-			  << frame.F3 << frame.FC6 << frame.P7 << frame.T8 << frame.F7 << frame.F8 << frame.T7 << frame.P8 << frame.AF4 << frame.F4 << frame.AF3 << frame.O2 << frame.O1 << frame.FC5 << osc::EndMessage;
-			transmitSocket.Send( p.Data(), p.Size() );
+			channels << osc::BeginMessage( "/emokit/channels" )
+				<< frame.F3 << frame.FC6 << frame.P7 << frame.T8 << frame.F7 << frame.F8 << frame.T7 << frame.P8 << frame.AF4 << frame.F4 << frame.AF3 << frame.O2 << frame.O1 << frame.FC5 << osc::EndMessage;
+			transmitSocket.Send( channels.Data(), channels.Size() );
 			
-			q << osc::BeginMessage( "/emokit/gyro" ) 
-			  << (int)frame.gyroX << (int)frame.gyroY << osc::EndMessage;
-			transmitSocket.Send( q.Data(), q.Size() );
+			gyro << osc::BeginMessage( "/emokit/gyro" ) 
+				<< (int)frame.gyroX << (int)frame.gyroY << osc::EndMessage;
+			transmitSocket.Send( gyro.Data(), gyro.Size() );
+			
+			info << osc::BeginMessage( "/emokit/info" )
+				<< (int)d->battery;
+				for (int i = 0; i<14 ; i++) info << (int)d->contact_quality[i];
+				info << osc::EndMessage;
+			transmitSocket.Send( info.Data(), info.Size() );
 		}
 	}
 

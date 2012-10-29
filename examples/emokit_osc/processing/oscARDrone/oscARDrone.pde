@@ -10,6 +10,13 @@ import netP5.*;
 //import AR DRONE stuff
 import com.shigeodayo.ardrone.*;
 
+final int margin = 20;
+final int dataPos = 215;
+final int BUFFER_SIZE = 31;
+final int NUMBER_OF_SENSORS = 14;
+boolean showContactQuality = false;
+String[] names = {"F3", "FC6", "P7", "T8", "F7", "F8", "T7", "P8", "AF4", "F4", "AF3", "O2", "O1", "FC5", "GyroX", "GyroY"};
+int[] buffer = new int[BUFFER_SIZE];
 OscP5 oscP5;
 
 // ARDRONE OBJ
@@ -17,7 +24,7 @@ ARDroneForP5 ardrone;
 int takeoff=0;
 
 void setup() {
-  size(displayHeight*4/3, displayHeight, OPENGL);
+  size(displayHeight*4/3, displayHeight*3/4, OPENGL);
   frameRate(25);
   oscP5 = new OscP5(this, 7000);
   //hint(ENABLE_OPENGL_4X_SMOOTH);
@@ -33,15 +40,19 @@ void setup() {
 
 void oscEvent(OscMessage msg){
   if(msg.checkAddrPattern("/emokit/channels")){
-    println("1) Channel readings:");
     for(int i=0 ; i<14 ; i++){
-      println("[" + i + "] : " + msg.get(i).intValue());
+      buffer[i] = msg.get(i).intValue();
     }
-    println();
   } else if(msg.checkAddrPattern("/emokit/gyro")){
-    println("2) Gyro:");
-    println("x: " + msg.get(0).intValue() + " ; y: " + msg.get(1).intValue());
-    println();
+    buffer[14] = msg.get(0).intValue();
+    buffer[15] = msg.get(1).intValue();
+  } else if(msg.checkAddrPattern("/emokit/info")){
+    // Get battery level
+    buffer[16] = msg.get(0).intValue();
+    // Get sensor quality
+    for(int i=0 ; i<NUMBER_OF_SENSORS ; i++){
+      buffer[17+i] = msg.get(i+1).intValue();
+    }
   }
 }
 
@@ -58,11 +69,11 @@ void draw()
   lightSpecular(255, 255, 255);
   directionalLight(224, 224, 224, .5, 1, -1);
 
- /* //AR.Drone show image
-  PImage img=ardrone.getVideoImage(false);
+ //AR.Drone show image
+  /*PImage img=ardrone.getVideoImage(false);
   if (img==null)
     return;
-  image(img, 0, 0);
+  image(img, displayHeight*4/3-img.width, displayHeight*3/4-img.height);
   // ardrone.printARDroneInfo();
   float pitch=ardrone.getPitch();
   float roll=ardrone.getRoll();
@@ -71,12 +82,24 @@ void draw()
   float[] velocity=ardrone.getVelocity();
   int battery=ardrone.getBatteryPercentage();
   String attitude="pitch:"+pitch+"\nroll:"+roll+"\nyaw:"+yaw+"\naltitude:"+altitude;
-  text(attitude, 20, 85);
+  text(attitude, margin, 85);
   String vel="vx:"+velocity[0]+"\nvy:"+velocity[1];
-  text(vel, 20, 140);
+  text(vel, margin, 140);
   String bat="battery:"+battery+" %";
-  text(bat, 20, 170);
-  */
+  text(bat, margin, 170);*/
+  
+  text("Sensor\nNames", margin+40, dataPos-35);
+  text("Levels:", margin+85, dataPos-35);
+  for (int i=0 ; i<BUFFER_SIZE-NUMBER_OF_SENSORS-1 ; i++){
+    text(names[i], margin+40, dataPos+i*12);
+    text(" : " + buffer[i], margin+80, dataPos+i*12);
+  }
+  if(showContactQuality){
+    text("Contact\nQuality:", margin-10, dataPos-35);
+    for (int i=0 ; i<NUMBER_OF_SENSORS ; i++){
+      text(buffer[17+i], margin, dataPos+i*12);
+    }
+  }
 }
 
 
@@ -105,7 +128,9 @@ void keyPressed() {
     }
   }
   else {
-    if (key=='s') {
+    if (key=='q') {
+      showContactQuality = showContactQuality ^ true;
+    } else if (key=='s') {
       ardrone.stop();
     }
     else if (key=='r') {

@@ -61,3 +61,8 @@ seem to agree on type conventions??
 I just figured out the osc reading problem: endianness was set to big endian by default where 
 it should have been little endian.
 I added the Processing oscARDrone sketch to the example folder.
+
+2012.11.06
+----------
+Added Java as a server for OSC messages. Using Processing inside Java and JavaEEGUtils for 
+computation of FFT as well as plots. Updated battery info from openyou's update.

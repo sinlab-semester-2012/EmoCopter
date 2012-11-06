@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.6"/>
+	<classpathentry kind="lib" path="/home/vince/programs/processing-2.0b3/core/library/core.jar"/>
+	<classpathentry kind="lib" path="/home/vince/programs/processing-2.0b3/sketchbook/libraries/oscP5/library/oscP5.jar"/>
+	<classpathentry kind="lib" path="/home/vince/project_1/OSC/ARDroneForP5.jar"/>
+	<classpathentry kind="lib" path="/home/vince/programs/processing-2.0b3/core/library/jogl-all.jar"/>
+	<classpathentry kind="lib" path="/home/vince/programs/processing-2.0b3/core/library/gluegen-rt.jar"/>
+	<classpathentry kind="lib" path="/home/vince/project_1/emokit/examples/emokit_osc/java/emocopter/lib/jTransforms/jtransforms-2.3.jar"/>
+	<classpathentry kind="lib" path="/home/vince/project_1/emokit/examples/emokit_osc/java/emocopter/lib/jSci/jsci-xtra.jar"/>
+	<classpathentry kind="lib" path="/home/vince/project_1/emokit/examples/emokit_osc/java/emocopter/lib/jSci/jsci-core.jar"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>

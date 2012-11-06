@@ -31,11 +31,11 @@ void setup() {
   noStroke();
 
   //ar drone init (in principle possible to control 2 or more with more Wireless net card)
-  /*ardrone=new ARDroneForP5("192.168.1.1");
+  ardrone=new ARDroneForP5("192.168.1.1");
   ardrone.connect();
   ardrone.connectNav();
   ardrone.connectVideo();
-  ardrone.start();*/
+  ardrone.start();
 }
 
 void oscEvent(OscMessage msg){
@@ -67,10 +67,10 @@ void draw()
   background(0);  
   ambientLight(64, 64, 64);
   lightSpecular(255, 255, 255);
-  directionalLight(224, 224, 224, .5, 1, -1);
+  directionalLight(224, 224, 224, (float).5, 1, -1);
 
  //AR.Drone show image
-  /*PImage img=ardrone.getVideoImage(false);
+  PImage img=ardrone.getVideoImage(false);
   if (img==null)
     return;
   image(img, displayHeight*4/3-img.width, displayHeight*3/4-img.height);
@@ -86,7 +86,7 @@ void draw()
   String vel="vx:"+velocity[0]+"\nvy:"+velocity[1];
   text(vel, margin, 140);
   String bat="battery:"+battery+" %";
-  text(bat, margin, 170);*/
+  text(bat, margin, 170);
   
   text("Sensor\nNames", margin+40, dataPos-35);
   text("Levels:", margin+85, dataPos-35);

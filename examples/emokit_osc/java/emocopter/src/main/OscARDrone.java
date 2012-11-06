@@ -42,8 +42,8 @@ public class OscARDrone extends PApplet{
 	private Sensor[] buffer;
 	//Plots the fft of a *single* chosen cap sensor.
 	private int selectedSensor = 4;
-	private FFTPlot fftplot = new FFTPlot(EmoConst.WINDOW_SIZE, EmoConst.SAMPLE_RATE);
-	private RawSignalPlot rawSignalPlot = new RawSignalPlot(EmoConst.WINDOW_SIZE);
+	private FFTPlot fftplot = new FFTPlot(EmoConst.FFT_BUFFER_SIZE, EmoConst.SAMPLE_RATE);
+	private RawSignalPlot rawSignalPlot = new RawSignalPlot(EmoConst.FFT_BUFFER_SIZE);
 
 	public void setup() {
 		initialize();
@@ -75,7 +75,7 @@ public class OscARDrone extends PApplet{
 		buffer = new Sensor[EmoConst.NUMBER_OF_SENSORS];
 		for(int sensor=0 ; sensor<EmoConst.NUMBER_OF_SENSORS ; sensor++){
 			if(sensor < EmoConst.NUMBER_OF_EEG_CAPS){
-				fftBuffer[sensor] = new FFTDataBuffer(EmoConst.WINDOW_SIZE, EmoConst.SAMPLE_RATE);
+				fftBuffer[sensor] = new FFTDataBuffer(EmoConst.FFT_BUFFER_SIZE, EmoConst.SAMPLE_RATE);
 				buffer[sensor] = new EEGCap(EmoConst.SENSOR_NAMES[sensor]);
 			} else buffer[sensor] = new Sensor(EmoConst.SENSOR_NAMES[sensor]);
 			baseLevels[sensor] = 0;

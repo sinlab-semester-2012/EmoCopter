@@ -148,21 +148,28 @@ public class OscARDrone extends PApplet{
 
 	/**
 	 * Inherited oscEvent method, reacts to OSC messages.
+	 * The received message is parsed for address pattern and then the data is collected
+	 * in the buffer.
 	 * @param msg
 	 */
 	void oscEvent(OscMessage msg){
-		if(msg.checkAddrPattern("/emokit/channels")){
-			for(int sensor=0 ; sensor<EmoConst.NUMBER_OF_EEG_CAPS ; sensor++){
-				buffer[sensor].updateValue(msg.get(sensor).intValue()-((int)baseLevels[sensor]*3/4));
-				fftBuffer[sensor].add(msg.get(sensor).intValue());
-				fftBuffer[sensor].applyFFT();
-				if(sensor == selectedSensor) fftplot.add((buffer[sensor-1].value() + buffer[sensor].value())/2-((int)baseLevels[sensor]*3/4));
-				if(putData) putData(buffer[sensor].name(), buffer[sensor].value());
-			}
-		} else if(msg.checkAddrPattern("/emokit/gyro")){
+		if(msg.checkAddrPattern(EmoConst.CHANNEL_ADDR_PATTERN)){
+			String typetag = msg.typetag();
+			int number_of_signals = typetag.length();
+			if(number_of_signals == EmoConst.NUMBER_OF_EEG_CAPS){
+				for(int sensor=0 ; sensor<number_of_signals ; sensor++){
+					buffer[sensor].updateValue(msg.get(sensor).intValue()-(int)(baseLevels[sensor]*3/4));
+					fftBuffer[sensor].add(msg.get(sensor).intValue());
+					fftBuffer[sensor].applyFFT();
+					// this is the average over two sensors.
+					if(sensor == selectedSensor) fftplot.add((buffer[sensor-1].value() + buffer[sensor].value())/2-(int)(baseLevels[sensor]*3/4));
+					if(putData) putData(buffer[sensor].name(), buffer[sensor].value());
+				}
+			} else throw new IllegalArgumentException("Typetag length should be the same as the number of EEG caps.");
+		} else if(msg.checkAddrPattern(EmoConst.GYRO_ADDR_PATTERN)){
 			buffer[EmoConst.gyroX_index].updateValue(msg.get(0).intValue());
 			buffer[EmoConst.gyroY_index].updateValue(msg.get(1).intValue());
-		} else if(msg.checkAddrPattern("/emokit/info")){
+		} else if(msg.checkAddrPattern(EmoConst.INFO_ADDR_PATTERN)){
 			// Get battery level
 			buffer[EmoConst.battery_index].updateValue(msg.get(0).intValue());
 			// Get sensor quality

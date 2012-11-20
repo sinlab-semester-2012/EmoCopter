@@ -1,8 +1,18 @@
 #!/bin/sh
 
-if [ ${PWD##*/} = "emokit" ] ; then echo "Cleaning up";
+# If this script is located at the root of the project, it will be executed from there
+curdir="$(pwd)"
+dir="$(dirname "$(readlink -f "$0")")"
+cd "$dir"
+
+# This provides an extra protection against unwanted file deletion
+cleanFolder="emocopter"
+if [ ${PWD##*/} = "$cleanFolder" ] ; then echo "Cleaning up";
 else echo "Wrong directory. exiting"; exit 1;
 fi
+
+# going to server/
+cd server/
 
 # clean main directory
 rm -r CMakeFiles/
@@ -47,5 +57,9 @@ while($notDone); do
 	esac
 done
 
+# go back to emocopter/
+cd ../
+
+cd "$curdir"
 echo "Done"
 exit 0

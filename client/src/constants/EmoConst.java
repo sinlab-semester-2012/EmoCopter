@@ -5,6 +5,9 @@ public class EmoConst {
 	//Number of sensors; note that gyroscopes and battery are included.
 	public final static int NUMBER_OF_EEG_CAPS = 14;
 	public final static int NUMBER_OF_SENSORS = SENSOR_NAMES.length;
+	public final static String CHANNEL_ADDR_PATTERN = "/emokit/channels";
+	public final static String GYRO_ADDR_PATTERN = "/emokit/gyro";
+	public final static String INFO_ADDR_PATTERN = "/emokit/info";
 	public final static int gyroX_index = NUMBER_OF_EEG_CAPS;
 	public final static int gyroY_index = gyroX_index+1;
 	public final static int battery_index = gyroY_index+1;

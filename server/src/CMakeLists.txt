@@ -1,8 +1,8 @@
 ##########################################
-##              libepoc                ###
+##              libemokit              ###
 ##########################################
 
-# Create a library called "libepoc"
+# Create a library called "libemokit"
 IF(WIN32)
   ADD_LIBRARY (emokit STATIC emokit.c emokit_win32.c) 
 ELSE()

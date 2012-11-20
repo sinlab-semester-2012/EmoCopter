@@ -15,7 +15,6 @@ import com.shigeodayo.ardrone.processing.ARDroneForP5;
 import constants.*;
 
 import eegUtils.gui.FFTPlot;
-import eegUtils.gui.RawSignalPlot;
 import eegUtils.util.FFTDataBuffer;
 import exceptions.TooManySensorsException;
 import frame.*;
@@ -43,9 +42,9 @@ public class OscARDrone extends PApplet{
 	//Plots the fft of a *single* chosen cap sensor.
 	private int selectedSensor = 4;
 	private FFTPlot fftplot = new FFTPlot(EmoConst.FFT_BUFFER_SIZE, EmoConst.SAMPLE_RATE);
-	private RawSignalPlot rawSignalPlot = new RawSignalPlot(EmoConst.FFT_BUFFER_SIZE);
 
 	public void setup() {
+		fftplot.setMinFrequency(2);
 		initialize();
 		frameWidth = displayHeight*4/3;
 		frameHeight = displayHeight*3/4;
@@ -59,8 +58,6 @@ public class OscARDrone extends PApplet{
 			ardrone.connectNav();
 			ardrone.connectVideo();
 			ardrone.start();
-		} else {
-			System.out.println("ARDrone not connected, please connect it and restart the app.");
 		}
 	}
 	
@@ -106,8 +103,8 @@ public class OscARDrone extends PApplet{
 	 * Given an index 'sensor', the 'data' is attributed to the
 	 * correct frame position.
 	 * 
-	 * @param data
-	 * @param sensor
+	 * @param data: the data to be inserted
+	 * @param sensor: 
 	 */
 	private void putData(String sensor, int data){
 		epocData.get(epocData.size()-1).put(new Sensor(sensor, data));
@@ -159,8 +156,7 @@ public class OscARDrone extends PApplet{
 				buffer[sensor].updateValue(msg.get(sensor).intValue()-((int)baseLevels[sensor]*3/4));
 				fftBuffer[sensor].add(msg.get(sensor).intValue());
 				fftBuffer[sensor].applyFFT();
-				if(sensor == selectedSensor) fftplot.add(msg.get(sensor).intValue()-((int)baseLevels[sensor]*3/4));
-				if(sensor == selectedSensor) rawSignalPlot.add(msg.get(sensor).intValue()-((int)baseLevels[sensor]*3/4));
+				if(sensor == selectedSensor) fftplot.add((buffer[sensor-1].value() + buffer[sensor].value())/2-((int)baseLevels[sensor]*3/4));
 				if(putData) putData(buffer[sensor].name(), buffer[sensor].value());
 			}
 		} else if(msg.checkAddrPattern("/emokit/gyro")){
@@ -221,7 +217,7 @@ public class OscARDrone extends PApplet{
 			}
 		}
 		if(showGyro){
-			stroke(GUIConst.WHITE);
+			stroke(GUIConst.white);
 			strokeWeight(2);
 			//GyroX:
 			rect(GUIConst.gyroXx, GUIConst.gyroXy, -buffer[EmoConst.gyroX_index].value(), GUIConst.stdThickness);
@@ -233,8 +229,8 @@ public class OscARDrone extends PApplet{
 		if(showBattery){
 			text(buffer[EmoConst.battery_index].value() + "%", GUIConst.batteryX+GUIConst.batterySize+5, GUIConst.batteryY+GUIConst.stdThickness/2);
 			strokeWeight(1);
-			stroke(GUIConst.WHITE);
-			fill(GUIConst.WHITE);
+			stroke(GUIConst.white);
+			fill(GUIConst.white);
 			rect(GUIConst.batteryX+1, GUIConst.batteryY+1, (buffer[EmoConst.battery_index].value()*(GUIConst.batterySize-2)/100), (GUIConst.stdThickness-4)/2);
 			noFill();
 			rect(GUIConst.batteryX, GUIConst.batteryY, GUIConst.batterySize, GUIConst.stdThickness/2);

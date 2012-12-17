@@ -10,6 +10,8 @@ public class GUIConst {
 	public final static int gyroXy = 400;
 	public final static int gyroYx = 160;
 	public final static int gyroYy = 300;
+	public final static int helpX = 400;
+	public final static int helpY = 100;
 	public final static int white = 200;
 	public final static int batteryX = 30;
 	public final static int batteryY = 20;

@@ -10,5 +10,12 @@
 	<classpathentry kind="lib" path="lib/jTransforms/jtransforms-2.3.jar"/>
 	<classpathentry kind="lib" path="lib/jSci/jsci-xtra.jar"/>
 	<classpathentry kind="lib" path="lib/jSci/jsci-core.jar"/>
+	<classpathentry kind="lib" path="lib/javaml-0.1.7/javaml-0.1.7.jar"/>
+	<classpathentry kind="lib" path="lib/javaml-0.1.7/lib/weka.jar"/>
+	<classpathentry kind="lib" path="lib/javaml-0.1.7/lib/libsvm.jar"/>
+	<classpathentry kind="lib" path="lib/javaml-0.1.7/lib/Jama-1.0.2.jar"/>
+	<classpathentry kind="lib" path="lib/javaml-0.1.7/lib/commons-math-1.2.jar"/>
+	<classpathentry kind="lib" path="lib/javaml-0.1.7/lib/ajt-2.9.jar"/>
+	<classpathentry kind="lib" path="lib/controlP5/controlP5.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

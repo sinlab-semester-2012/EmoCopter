@@ -1,27 +1,53 @@
 package sensors;
 
+import net.sf.javaml.core.Instance;
 import constants.EmoConst;
+import exceptions.WrongSensorException;
 
 public class Sensor {
+	protected boolean isCap = false;
 	private String name;
 	private int value;
+	private boolean isSet;
 	
 	/**
-	 * A sensor with a name.
+	 * Constructs a sensor with a given name and a value set to 0.
 	 * @param name
 	 */
 	public Sensor(String name){
 		this(name, 0);
+		isSet = false;
 	}
 	
 	/**
-	 * A sensor with a name and a value.
+	 * Constructs a sensor with a given name and given value.
 	 * @param name
 	 * @param value
 	 */
 	public Sensor(String name, int value){
 		this.name = new String(name);
 		this.value = value;
+		isSet = true;
+	}
+	
+	/**
+	 * Constructs a sensor with a given name index and a value set to 0.
+	 * @param name index
+	 */
+	public Sensor(int name){
+		this(name, 0);
+		isSet = false;
+	}
+	
+	/**
+	 * Constructs a sensor with a given name index and given value.
+	 * @param name index
+	 * @param value
+	 */
+	public Sensor(int name, int value){
+		this.name = EmoConst.SENSOR_NAMES[name];
+		this.value = value;
+		isSet = true;
 	}
 	
 	/**
@@ -32,7 +58,7 @@ public class Sensor {
 	public static boolean isValid(String sensor){
 		boolean contains = false;
 		for(int i=0 ; i<EmoConst.NUMBER_OF_SENSORS ; i++)
-			contains |= (sensor == EmoConst.SENSOR_NAMES[i]);
+			contains |= (sensor.equals(EmoConst.SENSOR_NAMES[i]));
 		return contains;
 	}
 	
@@ -45,11 +71,28 @@ public class Sensor {
 	}
 	
 	/**
+	 * Getter for isSet.
+	 * @return true if a value has already been assigned to this sensor.
+	 */
+	public boolean isSet(){
+		return isSet;
+	}
+	
+	/**
 	 * Setter for value.
 	 * @param value
 	 */
 	public void updateValue(int value){
+		isSet = true;
 		this.value = value;
+	}
+	
+	/**
+	 * Getter for isCap.
+	 * @return true if this sensor is an EEG cap.
+	 */
+	public boolean isCap(){
+		return isCap;
 	}
 	
 	/**
@@ -66,5 +109,23 @@ public class Sensor {
 	 */
 	public int value(){
 		return value;
+	}
+	
+	/**
+	 * 
+	 * @param bins
+	 * @throws WrongSensorException
+	 */
+	public void setFreqs(double[] bins) throws WrongSensorException {
+		throw new WrongSensorException();
+	}
+
+	/**
+	 * 
+	 * @return
+	 * @throws WrongSensorException
+	 */
+	public Instance getBinsInstance() throws WrongSensorException {
+		throw new WrongSensorException();
 	}
 }

@@ -66,3 +66,8 @@ I added the Processing oscARDrone sketch to the example folder.
 ----------
 Added Java as a server for OSC messages. Using Processing inside Java and JavaEEGUtils for 
 computation of FFT as well as plots. Updated battery info from openyou's update.
+
+2012.12.17
+----------
+Added javaml for machine learning, although not well integrated yet. Also started considering 
+P300 event-related potentials. Will probably provide more details on the wiki.

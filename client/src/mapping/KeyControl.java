@@ -2,6 +2,9 @@ package mapping;
 
 import com.shigeodayo.ardrone.processing.ARDroneForP5;
 
+/**
+ * This class provides a mapping for keyboard-sent commands.
+ */
 public class KeyControl implements processing.core.PConstants{
 	public static void map(ARDroneForP5 drone, int key, int keyCode){
 		switch(key) {

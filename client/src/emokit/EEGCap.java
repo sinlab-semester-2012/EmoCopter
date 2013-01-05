@@ -91,7 +91,9 @@ public class EEGCap extends Sensor{
 	 * @param freqs
 	 */
 	public void setFreqs(double[] freqs){
-		this.freqs = freqs.clone();
+		for(int i=0 ; i<freqs.length ; i++){
+			this.freqs[i] = freqs[i];
+		}
 	}
 	
 	/**
@@ -123,7 +125,7 @@ public class EEGCap extends Sensor{
 		int rate = EmoConst.SAMPLE_RATE;
 		int size = EmoConst.FFT_BUFFER_SIZE;
 		double resolution = ((double) rate) / ((double) size);
-		return (int) (rate/2/(resolution+1));
+		return (int) (rate/2/resolution + 1);
 	}
 
 }

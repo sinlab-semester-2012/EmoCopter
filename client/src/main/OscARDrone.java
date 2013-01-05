@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 import javax.swing.JFileChooser;
+import javax.swing.filechooser.FileFilter;
+import javax.swing.filechooser.FileNameExtensionFilter;
 
 import mapping.KeyControl;
 import net.sf.javaml.core.Dataset;
@@ -33,7 +35,9 @@ public class OscARDrone extends PApplet{
 	private static final long serialVersionUID = 1L;
 	private static final String user = "vince";
 	OscP5 oscP5;
-	private String savedData = "emocopter_vince.data";
+	//private String pathToDatasets = Thread.currentThread().getContextClassLoader().getResource("../datasets/").toString();
+	private String pathToDatasets = "datasets/";
+	// TODO update to ARDroneForP5 2.0, see Nikita's work: https://github.com/MGrin/Quadrokinect
 	private ARDroneForP5 ardrone;
 	private boolean isConnected = false;
 	private boolean showBattery = false;
@@ -41,7 +45,7 @@ public class OscARDrone extends PApplet{
 	private boolean showHelp = true;
 	private boolean showPlots = false;
 	private boolean showGyro = false;
-	private boolean recordData = false;	//TODO
+	private boolean recordData = false;
 	private boolean loadData = false;		//TODO
 	private boolean saveData = false;		//TODO
 	private int frameWidth;
@@ -156,10 +160,12 @@ public class OscARDrone extends PApplet{
 	private void saveDataset(){	// TODO no values or zero values
 		try {
 			long filename_ext = (new java.util.Date()).getTime();
-			FileHandler.exportDataset(sensorData, new File("emocopter_"+user+"_sensor_"+filename_ext+".data"));
+			File file = new File(pathToDatasets + "emocopter_"+user+"_sensor_"+filename_ext+".data");
+			if(!file.getParentFile().exists()) file.getParentFile().mkdir();
+			FileHandler.exportDataset(sensorData, file);
 			for (int sensor=0 ; sensor<EmoConst.NUMBER_OF_EEG_CAPS ; sensor++){
 				String sensorName = EmoConst.SENSOR_NAMES[sensor];
-				FileHandler.exportDataset(freqData[sensor], new File("emocopter_"+user+"_freq_"+sensorName+"_"+filename_ext+".data"));
+				FileHandler.exportDataset(freqData[sensor], new File(pathToDatasets + "emocopter_"+user+"_freq_"+sensorName+"_"+filename_ext+".data"));
 			}
 		} catch (IOException e) {
 			System.out.println("Couldn't create file, check for permissions.");
@@ -167,9 +173,14 @@ public class OscARDrone extends PApplet{
 		}
 	}
 	
+	/**
+	 * Load an existing dataset from the 'datasets' folder.
+	 */
 	private void loadDataset(){
 		try {
-			JFileChooser fileChooser = new JFileChooser();
+			FileFilter filter = new FileNameExtensionFilter("Dataset files", "data", "DATA");
+			JFileChooser fileChooser = new JFileChooser(pathToDatasets);
+			fileChooser.setFileFilter(filter);
 			fileChooser.showOpenDialog(this);
 			sensorData = FileHandler.loadDataset(fileChooser.getSelectedFile(), 0, ",");
 		} catch (IOException e) {
@@ -177,65 +188,10 @@ public class OscARDrone extends PApplet{
 			e.printStackTrace();
 		}
 	}
-
-	/**
-	 * Save data for this session.
-	 */
-	/*private void saveData(){
-		String[] dataTmp = new String[epocData.size()];
-		for(int frame=0 ; frame<epocData.size() ; frame++){
-			dataTmp[frame] = new String();
-			for(int sensor=0 ; sensor<EmoConst.NUMBER_OF_SENSORS ; sensor++){
-				dataTmp[frame] = dataTmp[frame] + epocData.get(frame).getData(sensor) + " ";
-			}
-		}
-		saveStrings(savedData, dataTmp);
-	}*/
-	
-	/**
-	 * Load saved data from a previous session.
-	 */
-	/*private void loadData(){
-		String[] dataTmp = loadStrings(savedData);
-		if(dataTmp != null){
-			for(int frame=0 ; frame<dataTmp.length ; frame++){
-				StringTokenizer tokens = new StringTokenizer(dataTmp[frame], " ");
-				int numberOfSensors = tokens.countTokens();
-				if(numberOfSensors > EmoConst.NUMBER_OF_SENSORS) throw new TooManySensorsException(numberOfSensors);
-				Sensor[] sensors = new Sensor[numberOfSensors];
-				for(int sensor=0 ; sensor<numberOfSensors ; sensor++) {
-					sensors[sensor] = new Sensor(EmoConst.SENSOR_NAMES[sensor], Integer.parseInt(tokens.nextToken()));
-				}
-				epocData.add(new EmoFrame(sensors));
-			}
-		}
-	}*/
-
-	/*
-	private void doBaseLevels(){
-		float[][] tmp = new float[EmoConst.MEAN_PRECISION][EmoConst.NUMBER_OF_SENSORS];
-		for(int precision=0 ; precision<EmoConst.MEAN_PRECISION ; precision++){
-			java.util.Date time0 = new java.util.Date();
-			for(int sensor=0 ; sensor<EmoConst.NUMBER_OF_SENSORS ; sensor++){
-				tmp[precision][sensor] = buffer[sensor].value();
-			}
-			if(precision<EmoConst.MEAN_PRECISION-1){
-				while(new java.util.Date().getTime()-time0.getTime() < 1000/EmoConst.PRECISION_RATE){}
-			}
-		}
-		for(int sensor=0 ; sensor<EmoConst.NUMBER_OF_SENSORS ; sensor++){
-			for(int precision=0 ; precision<EmoConst.MEAN_PRECISION ; precision++){
-				baseLevels[sensor] += tmp[precision][sensor];
-			}
-			baseLevels[sensor] = Math.round(baseLevels[sensor] / EmoConst.MEAN_PRECISION);
-		}
-	}*/
 	
 	/**
 	 * This is used to record new data.
-	 * Given a String index 'sensor', the 'data' is attributed to the
-	 * correct frame position.
-	 * 
+	 * Given a String index 'sensor', the 'data' is attributed to the right frame position.
 	 * @param data to be inserted
 	 * @param sensor name
 	 * @throws FullFrameException 
@@ -267,8 +223,9 @@ public class OscARDrone extends PApplet{
 					fftBuffer[sensor].add(msg.get(sensor).intValue());
 					fftBuffer[sensor].applyFFT();
 					try {
-						if(sensor < EmoConst.NUMBER_OF_EEG_CAPS)
+						if(sensor < EmoConst.NUMBER_OF_EEG_CAPS){
 							buffer.setFreqs(sensor, fftBuffer[sensor].getBins());
+						}
 					} catch (WrongSensorException e1) {
 						e1.printStackTrace();
 					}

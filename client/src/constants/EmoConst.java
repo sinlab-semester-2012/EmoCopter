@@ -16,6 +16,8 @@ public class EmoConst {
 	//public final static int MEAN_PRECISION = 40;
 	//Precision rate defines how many times a sample is taken per second.
 	//public final static int PRECISION_RATE = 4;
-	public final static int FFT_BUFFER_SIZE = 256;
+	public final static int FFT_BUFFER_SIZE = 128;
 	public final static int SAMPLE_RATE = 128;
+	public final static int USUALMIN = 7000;
+	public final static int USUALMAX = 10000;
 }

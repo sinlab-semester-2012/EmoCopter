@@ -2,17 +2,27 @@ package potentials;
 
 import java.util.Date;
 
+/**
+ * The idea here is to cluster all information regarding a trial at P300.
+ * This information should be provided to the speller, which will in turn
+ * know which selection to make.
+ */
 public class P300 extends Thread{
-	private Position position = new Position();
 	// Minimum number of trials before having an acceptable move
-	private int minimumNumberOfTrials = 10;
+	public static final int minimumNumberOfTrials = 10;	// TODO TBD on experiment basis
 	// Number of already ran trials
 	private int trialCounter = 0; 
 	// Number of trials per second
-	private long trialFrequency = 64;
-	private Trial[] trials = new Trial[minimumNumberOfTrials]; // TODO has to be a buffer of trials
+	public static final long trialFrequency = 64;		// [Hz] TODO has to be defined also
+	public static final int minLatency = 300;			// [ms]
+	public static final int maxLatency = 600;			// [ms]
+	public static final int minVoltDeflection = 2;	// [uV]
+	public static final int maxVoltDeflection = 5;	// [uV]
+	public static final String[] sensors = {"P7", "P8"};	// Parietal lobe
+	private Trial[] trials = new Trial[minimumNumberOfTrials]; // TODO buffer of trials
 	
-	public P300(){
+	public P300(ARDRoneSpeller speller){
+		
 	}
 	
 	public void run(){
@@ -28,21 +38,9 @@ public class P300 extends Thread{
 		}
 	}
 	
-	public int randRow(){
-		return (int)Math.random()*Move.height();
-	}
-	
-	public int randCol(){
-		return (int)Math.random()*Move.width();
-	}
-	
-	// TODO find peak
+	// TODO find peak, in other words, build a classifier
 	private void findPeak(double[][] freqBins){
 		
-	}
-	
-	public String getMove(int row, int col){
-		return Move.getPosition(new Position(row, col));
 	}
 	
 	private class Trial{
@@ -53,31 +51,6 @@ public class P300 extends Thread{
 		}
 		public boolean isTimeOut(){
 			return (new Date()).getTime() - startTime >= delay;
-		}
-	}
-	
-	private static class Move{
-		private final static String[][] MOVES = {
-			{"RotateLeft", "Forward", "RotateRight"},
-			{"Left", "TakeOff/Land", "Right"},
-			{"Up", "Backward", "Down"}
-			};
-		public static String getPosition(Position p){
-			return new String(MOVES[p.c][p.r]);
-		}
-		public static int height(){
-			return MOVES.length;
-		}
-		public static int width(){
-			return MOVES[0].length;
-		}
-	}
-	private class Position{
-		public int r = -1, c = -1;
-		public Position(){}
-		public Position(int row, int col){
-			this.r = row;
-			this.c = col;
 		}
 	}
 }

@@ -4,6 +4,8 @@ package constants;
  * These are constants used for Processing's GUI
  */
 public class GUIConst {
+	public final static int screenW = java.awt.Toolkit.getDefaultToolkit().getScreenSize().width;
+	public final static int screenH = java.awt.Toolkit.getDefaultToolkit().getScreenSize().height;
 	public final static int margin = 20;
 	public final static int dataPos = 215;
 	public final static int gyroXx = 300;

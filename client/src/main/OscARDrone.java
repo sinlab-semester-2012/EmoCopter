@@ -6,25 +6,28 @@ import java.util.ArrayList;
 
 import javax.swing.JFileChooser;
 
+import mapping.KeyControl;
 import net.sf.javaml.core.Dataset;
 import net.sf.javaml.core.DefaultDataset;
 import net.sf.javaml.tools.data.FileHandler;
 
 import oscP5.*;
+import potentials.ARDRoneSpeller;
+import potentials.ARDroneSpellerGrid;
 import processing.core.*;
 // TODO import controlP5 to improve GUI
-import sensors.EEGCap;
-import sensors.Sensor;
 
 import com.shigeodayo.ardrone.processing.ARDroneForP5;
 
 import constants.*;
 
 import eegUtils.gui.FFTPlot;
+import eegUtils.gui.RawSignalPlot;
 import eegUtils.util.FFTDataBuffer;
+import emokit.EEGCap;
+import emokit.EmoFrame;
 import exceptions.FullFrameException;
 import exceptions.WrongSensorException;
-import frame.*;
 
 public class OscARDrone extends PApplet{
 	private static final long serialVersionUID = 1L;
@@ -48,10 +51,15 @@ public class OscARDrone extends PApplet{
 	private Dataset sensorData;
 	private Dataset[] freqData;
 	private FFTDataBuffer[] fftBuffer;
-	private Sensor[] buffer;
+	private EmoFrame buffer;
+	private ARDRoneSpeller speller;
+	private ARDroneSpellerGrid spellerGrid; 
 	//Plots the fft of a few chosen cap sensors.
-	private String[] selectedSensors = {"F3", "FC6", "P7", "T8", "F7", "F8", "T7", "P8", "AF4", "F4", "AF3", "O2", "O1", "FC5"};
+	private String[] selectedSensors = {"", "", "P7", "", "", "", "", "P8", "", "", "", "", "", ""};
+	//private String[] selectedSensors = {"F3", "FC6", "P7", "T8", "F7", "F8", "T7", "P8", "AF4", "F4", "AF3", "O2", "O1", "FC5"};
 	private FFTPlot[] fftplot = new FFTPlot[EmoConst.NUMBER_OF_EEG_CAPS];
+	private RawSignalPlot rawSignalPlotP7;
+	private RawSignalPlot rawSignalPlotP8;
 	private boolean plots_inited = false;
 
 	public void setup() {
@@ -60,11 +68,14 @@ public class OscARDrone extends PApplet{
 		size(frameWidth, frameHeight, OPENGL);
 		noStroke();
 		frameRate(25);
-		arrays_init();
+		init_env();
+		spellerGrid = new ARDroneSpellerGrid();
+		speller = new ARDRoneSpeller(spellerGrid);
+		speller.start();
 		
 		oscP5 = new OscP5(this, 7000);
-		//ardrone=new ARDroneForP5("192.168.1.1");
-		//isConnected = ardrone.connect();
+		/*ardrone=new ARDroneForP5("192.168.1.1");
+		isConnected = ardrone.connect();*/
 		if(isConnected){
 			ardrone.connectNav();
 			ardrone.connectVideo();
@@ -75,34 +86,42 @@ public class OscARDrone extends PApplet{
 	/**
 	 * Initialize buffers and arrays.
 	 */
-	private void arrays_init(){
+	private void init_env(){
 		//if(loadData) loadData();
 		frameBuffer = new ArrayList<EmoFrame>();
 		frameBuffer.add(new EmoFrame());
 		sensorData = new DefaultDataset();
 		freqData = new Dataset[EmoConst.NUMBER_OF_EEG_CAPS];
 		fftBuffer = new FFTDataBuffer[EmoConst.NUMBER_OF_EEG_CAPS];
-		buffer = new Sensor[EmoConst.NUMBER_OF_SENSORS];
+		buffer = new EmoFrame();
 		for(int sensor=0 ; sensor<EmoConst.NUMBER_OF_SENSORS ; sensor++){
 			if(sensor < EmoConst.NUMBER_OF_EEG_CAPS){
 				freqData[sensor] = new DefaultDataset();
 				fftBuffer[sensor] = new FFTDataBuffer(EmoConst.FFT_BUFFER_SIZE, EmoConst.SAMPLE_RATE);
-				buffer[sensor] = new EEGCap(EmoConst.SENSOR_NAMES[sensor]);
-			} else buffer[sensor] = new Sensor(EmoConst.SENSOR_NAMES[sensor]);
+			}
 		}
 	}
 	
 	/**
-	 * Initialize fft plots.
+	 * Initialize plots.
 	 */
 	private void plots_init(){
+		rawSignalPlotP7 = new RawSignalPlot(EmoConst.SAMPLE_RATE);
+		rawSignalPlotP7.setYExtrema(EmoConst.USUALMIN, EmoConst.USUALMAX);
+		rawSignalPlotP7.setSize(GUIConst.screenW, GUIConst.screenH/2-5);
+		rawSignalPlotP7.setLocation(0, 10);
+		rawSignalPlotP8 = new RawSignalPlot(EmoConst.SAMPLE_RATE);
+		rawSignalPlotP8.setYExtrema(EmoConst.USUALMIN, EmoConst.USUALMAX);
+		rawSignalPlotP8.setSize(GUIConst.screenW, GUIConst.screenH/2-5);
+		rawSignalPlotP8.setLocation(0, GUIConst.screenH/2+5);
 		int[][] plotsGrid = setPlotsGrid();
 		for(int sensor=0 ; sensor<EmoConst.NUMBER_OF_EEG_CAPS ; sensor++){
 			fftplot[sensor] = new FFTPlot(EmoConst.FFT_BUFFER_SIZE, EmoConst.SAMPLE_RATE);
 			fftplot[sensor].setTitle(EmoConst.SENSOR_NAMES[sensor]);
 			fftplot[sensor].setSize(plotsGrid[EmoConst.NUMBER_OF_EEG_CAPS][0], plotsGrid[EmoConst.NUMBER_OF_EEG_CAPS][1]);
 			fftplot[sensor].setLocation(plotsGrid[sensor][0], plotsGrid[sensor][1]);
-			fftplot[sensor].setMinFrequency(2);
+			fftplot[sensor].setMinFrequency(1);
+			fftplot[sensor].setYExtrema(0, 30);
 		}
 	}
 	
@@ -234,32 +253,40 @@ public class OscARDrone extends PApplet{
 	}
 	
 	/**
-	 * Inherited oscEvent method, reacts to OSC messages.
-	 * The received message is parsed for address pattern and then the data is collected
-	 * in the buffer.
+	 * The received OSC message is parsed and data is collected in the buffer.
 	 * @param msg
 	 */
 	void oscEvent(OscMessage msg){
+		try{
 		if(msg.checkAddrPattern(EmoConst.CHANNEL_ADDR_PATTERN)){
 			String typetag = msg.typetag();
 			int number_of_signals = typetag.length();
 			if(number_of_signals == EmoConst.NUMBER_OF_EEG_CAPS){
 				for(int sensor=0 ; sensor<number_of_signals ; sensor++){
-					buffer[sensor].updateValue(msg.get(sensor).intValue());
+					buffer.set(sensor, msg.get(sensor).intValue());
 					fftBuffer[sensor].add(msg.get(sensor).intValue());
 					fftBuffer[sensor].applyFFT();
 					try {
-						buffer[sensor].setFreqs(fftBuffer[sensor].getBins());
-						println(buffer[sensor].getBinsInstance());
+						if(sensor < EmoConst.NUMBER_OF_EEG_CAPS)
+							buffer.setFreqs(sensor, fftBuffer[sensor].getBins());
 					} catch (WrongSensorException e1) {
 						e1.printStackTrace();
 					}
-					if(showPlots && selectedSensors[sensor] == EmoConst.SENSOR_NAMES[sensor])
-						fftplot[sensor].add(buffer[sensor].value());
+					if(showPlots) {
+						if(selectedSensors[sensor].equals(EmoConst.SENSOR_NAMES[sensor])) {
+							fftplot[sensor].add(buffer.getData(sensor));
+						}
+						try{
+							if(EmoConst.SENSOR_NAMES[sensor].equals("P7")) rawSignalPlotP7.add(buffer.getData(sensor));
+							if(EmoConst.SENSOR_NAMES[sensor].equals("P8")) rawSignalPlotP8.add(buffer.getData(sensor));
+						} catch (Exception e){
+							e.printStackTrace();
+						}
+					}
 					if(recordData){
 						try {
-							freqData[sensor].add(buffer[sensor].getBinsInstance());
-							recordSensorData(sensor, buffer[sensor].value(), fftBuffer[sensor].getBins());
+							freqData[sensor].add(buffer.getBinsInstance(sensor));
+							recordSensorData(sensor, buffer.getData(sensor), fftBuffer[sensor].getBins());
 						} catch (FullFrameException e) {
 							e.printStackTrace();
 						} catch (WrongSensorException e1) {
@@ -269,15 +296,18 @@ public class OscARDrone extends PApplet{
 				}
 			} else throw new IllegalArgumentException("Typetag length should be the same as the number of EEG caps.");
 		} else if(msg.checkAddrPattern(EmoConst.GYRO_ADDR_PATTERN)){
-			buffer[EmoConst.gyroX_index].updateValue(msg.get(0).intValue());
-			buffer[EmoConst.gyroY_index].updateValue(msg.get(1).intValue());
+			buffer.set(EmoConst.gyroX_index, msg.get(0).intValue());
+			buffer.set(EmoConst.gyroY_index, msg.get(1).intValue());
 		} else if(msg.checkAddrPattern(EmoConst.INFO_ADDR_PATTERN)){
 			// Get battery level
-			buffer[EmoConst.battery_index].updateValue(msg.get(0).intValue());
+			buffer.set(EmoConst.battery_index, msg.get(0).intValue());
 			// Get sensor quality
-			for(int i=0 ; i<EmoConst.NUMBER_OF_EEG_CAPS ; i++){
-				((EEGCap)buffer[i]).updateQuality(msg.get(i+1).intValue());
+			for(int sensor=0 ; sensor<EmoConst.NUMBER_OF_EEG_CAPS ; sensor++){
+				buffer.setQuality(sensor, msg.get(sensor+1).intValue());
 			}
+		}
+		} catch(Exception e){
+			e.printStackTrace();
 		}
 	}
 
@@ -294,10 +324,10 @@ public class OscARDrone extends PApplet{
 		 * Drawing AR.Drone info
 		 */
 		if(isConnected){
-			PImage img=ardrone.getVideoImage(false);
+			/*PImage img=ardrone.getVideoImage(false);
 			if (img==null)
 				return;
-			image(img, frameWidth-img.width, frameHeight-img.height);
+			image(img, frameWidth-img.width, frameHeight-img.height);*/
 			float pitch=ardrone.getPitch();
 			float roll=ardrone.getRoll();
 			float yaw=ardrone.getYaw();
@@ -313,50 +343,54 @@ public class OscARDrone extends PApplet{
 		} else {
 			text("NO ARDRONE CONNECTION", 40, 80);
 		}
+		
+		/*
+		 * TODO Get speller data
+		 */
 
 		/*
-		 * Drawing EPOC data
+		 * Drawing EPOC data and info
 		 */
 		text("Sensor\nNames", GUIConst.margin+40, GUIConst.dataPos-35);
 		text("Levels", GUIConst.margin+85, GUIConst.dataPos-35);
 		for (int i=0 ; i<EmoConst.NUMBER_OF_EEG_CAPS ; i++){
 			text(EmoConst.SENSOR_NAMES[i], GUIConst.margin+40, GUIConst.dataPos+i*12);
-			text(" : " + buffer[i].value(), GUIConst.margin+80, GUIConst.dataPos+i*12);
+			text(" : " + buffer.getData(i), GUIConst.margin+80, GUIConst.dataPos+i*12);
 		}
 		if(showContactQuality){
 			text("Contact\nQuality", GUIConst.margin-10, GUIConst.dataPos-35);
 			for (int i=0 ; i<EmoConst.NUMBER_OF_EEG_CAPS ; i++){
-				text(((EEGCap)buffer[i]).quality(), GUIConst.margin, GUIConst.dataPos+i*12);
+				text(buffer.getQuality(i), GUIConst.margin, GUIConst.dataPos+i*12);
 			}
 		}
 		if(showGyro){
 			stroke(GUIConst.white);
 			strokeWeight(2);
 			//GyroX:
-			rect(GUIConst.gyroXx, GUIConst.gyroXy, -buffer[EmoConst.gyroX_index].value(), GUIConst.stdThickness);
+			rect(GUIConst.gyroXx, GUIConst.gyroXy, -buffer.getData(EmoConst.gyroX_index), GUIConst.stdThickness);
 			line(GUIConst.gyroXx, GUIConst.gyroXy-5, GUIConst.gyroXx, GUIConst.gyroXy+GUIConst.stdThickness+5);
 			//GyroY:
-			rect(GUIConst.gyroYx, GUIConst.gyroYy, GUIConst.stdThickness, buffer[EmoConst.gyroY_index].value());
+			rect(GUIConst.gyroYx, GUIConst.gyroYy, GUIConst.stdThickness, buffer.getData(EmoConst.gyroY_index));
 			line(GUIConst.gyroYx-5, GUIConst.gyroYy, GUIConst.gyroYx+GUIConst.stdThickness+5, GUIConst.gyroYy);
 		}
 		if(showBattery){
-			text(buffer[EmoConst.battery_index].value() + "%", GUIConst.batteryX+GUIConst.batterySize+5, GUIConst.batteryY+GUIConst.stdThickness/2);
+			text(buffer.getData(EmoConst.battery_index) + "%", GUIConst.batteryX+GUIConst.batterySize+5, GUIConst.batteryY+GUIConst.stdThickness/2);
 			strokeWeight(1);
 			stroke(GUIConst.white);
 			fill(GUIConst.white);
-			rect(GUIConst.batteryX+1, GUIConst.batteryY+1, (buffer[EmoConst.battery_index].value()*(GUIConst.batterySize-2)/100), (GUIConst.stdThickness-4)/2);
+			rect(GUIConst.batteryX+1, GUIConst.batteryY+1, (buffer.getData(EmoConst.battery_index)*(GUIConst.batterySize-2)/100), (GUIConst.stdThickness-4)/2);
 			noFill();
 			rect(GUIConst.batteryX, GUIConst.batteryY, GUIConst.batterySize, GUIConst.stdThickness/2);
 		}
 		if(showHelp){
 			String help = "-- HOW TO USE --\n" +
 					"  GUI:\n" +
-					"    'a': show all\n" +
-					"    'b': show Battery\n" +
-					"    'g': show Gyro\n" +
-					"    'h': show Help\n" +
+					"    '0': show all\n" +
+					"    '6': show Battery\n" +
+					"    '7': show Gyro\n" +
+					"    '8': show Help\n" +
 					"    'p': show FFT Plots\n" +
-					"    'q': show contact quality\n" +
+					"    '9': show contact quality\n" +
 					"  Controls:\n" +
 					"    Arrow UP: forward\n" +
 					"    Arrow DOWN: backward\n" +
@@ -364,11 +398,11 @@ public class OscARDrone extends PApplet{
 					"    Arrow RIGHT: go Right\n" +
 					"    SHIFT: take off\n" +
 					"    CTRL: land\n" +
-					"    's': stop\n" +
-					"    'r': spin right\n" +
-					"    'l': spin left\n" +
-					"    'u': go up\n" +
-					"    'd': go down\n" +
+					"    'q': stop\n" +
+					"    'd': spin right\n" +
+					"    'a': spin left\n" +
+					"    'w': go up\n" +
+					"    's': go down\n" +
 					"    '1': set Horizontal Camera\n" +
 					"    '2': set Horizontal Camera With Vertical\n" +
 					"    '3': set Vertical Camera\n" +
@@ -395,32 +429,23 @@ public class OscARDrone extends PApplet{
 	 * Keyboard command interpreter.
 	 */
 	public void keyPressed() {
+		
+		if(isConnected) KeyControl.map(ardrone, key, keyCode);
 		switch (key){
-		case CODED:
-			if(!isConnected) break;
-			switch(keyCode) {
-			case UP:		ardrone.forward(50); break;
-			case DOWN:		ardrone.backward(50); break;
-			case LEFT:		ardrone.goLeft(100); break;
-			case RIGHT:		ardrone.goRight(100); break;
-			case SHIFT:		ardrone.takeOff(); break;
-			case CONTROL:	ardrone.landing(); break;
-			}
-			break;
 		case ENTER:
 			recordData ^= true;
 			if(!recordData) saveDataset();
 			break;
-		case 'a':	/* show all */
+		case '0':	/* show all */
 			boolean show = !(showBattery && showGyro && showHelp && showContactQuality);
 			showBattery = show;
 			showGyro = show;
 			showHelp = show;
 			showContactQuality = show;
 			break;
-		case 'b':	showBattery ^= true; break;
-		case 'g':	showGyro ^= true; break;
-		case 'h':	showHelp ^= true; break;
+		case '6':	showBattery ^= true; break;
+		case '7':	showGyro ^= true; break;
+		case '8':	showHelp ^= true; break;
 		case 'p':
 			if(!plots_inited){
 				plots_init();
@@ -428,23 +453,19 @@ public class OscARDrone extends PApplet{
 			}
 			showPlots ^= true;
 			for(int i = 0 ; i < fftplot.length ; i++){
-				fftplot[i].setVisible(showPlots);
+				fftplot[i].setVisible(showPlots && selectedSensors[i].equals(EmoConst.SENSOR_NAMES[i]));
 			}
+			rawSignalPlotP7.setVisible(showPlots);
+			rawSignalPlotP8.setVisible(showPlots);
 			break;
-		case 'q':	showContactQuality ^= true; break;
-		default:	if(!isConnected) break;
-		switch(key) {
-			case 's':	ardrone.stop(); break;
-			case 'r':	ardrone.spinRight(10); break;
-			case 'l':	ardrone.spinLeft(10); break;
-			case 'u':	ardrone.up(10); break;
-			case 'd':	ardrone.down(10); break;
-			case '1':	ardrone.setHorizontalCamera(); break;
-			case '2':	ardrone.setHorizontalCameraWithVertical(); break;
-			case '3':	ardrone.setVerticalCamera(); break;
-			case '4':	ardrone.setVerticalCameraWithHorizontal(); break;
-			case '5':	ardrone.toggleCamera(); break;
-			}
+		case '9':	showContactQuality ^= true; break;
 		}
+	}
+	
+	/**
+	 * Makes sure the drone stops as soon as no key is pressed.
+	 */
+	public void keyReleased(){
+		if(isConnected) KeyControl.map(ardrone, WAIT, keyCode);
 	}
 }

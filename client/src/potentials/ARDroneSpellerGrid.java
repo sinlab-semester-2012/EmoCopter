@@ -27,17 +27,18 @@ public class ARDroneSpellerGrid extends JFrame{
 	private JPanel buildContentPane(){
 		JPanel panel = new JPanel();
 		panel.setLayout(new GridLayout(3, 3));
-		//panel.setBackground(Color.white);
-		ImageIcon RotateLeft = createImageIcon("img/Rotate_left.gif");
-		ImageIcon Forward = createImageIcon("img/Forward.gif");
-		ImageIcon RotateRight = createImageIcon("img/Rotate_right.gif");
-		ImageIcon Left = createImageIcon("img/Left.gif");
-		ImageIcon TakeOffLand = createImageIcon("img/TakeOff_Land.gif");
-		ImageIcon Right = createImageIcon("img/Right.gif");
-		ImageIcon Up = createImageIcon("img/UP.gif");
-		ImageIcon Backward = createImageIcon("img/Backward.gif");
-		ImageIcon Down = createImageIcon("img/DOWN.gif");
-		
+		String path = "../img/";
+		ClassLoader classloader = Thread.currentThread().getContextClassLoader();
+		ImageIcon RotateLeft = new ImageIcon(classloader.getResource(path + "Rotate_left.gif"));
+		ImageIcon Forward = new ImageIcon(classloader.getResource(path + "Forward.gif"));
+		ImageIcon RotateRight = new ImageIcon(classloader.getResource(path + "Rotate_right.gif"));
+		ImageIcon Left = new ImageIcon(classloader.getResource(path + "Left.gif"));
+		ImageIcon TakeOffLand = new ImageIcon(classloader.getResource(path + "TakeOff_Land.gif"));
+		ImageIcon Right = new ImageIcon(classloader.getResource(path + "Right.gif"));
+		ImageIcon Up = new ImageIcon(classloader.getResource(path + "UP.gif"));
+		ImageIcon Backward = new ImageIcon(classloader.getResource(path + "Backward.gif"));
+		ImageIcon Down = new ImageIcon(classloader.getResource(path + "DOWN.gif"));
+
 		grid.add(new JLabel(RotateLeft));
 		grid.add(new JLabel(Forward));
 		grid.add(new JLabel(RotateRight));
@@ -79,16 +80,5 @@ public class ARDroneSpellerGrid extends JFrame{
 			grid.get(i).setOpaque(true);
 			grid.get(i).repaint();
 		}
-	}
-	
-	/** Returns an ImageIcon, or null if the path was invalid. */
-	private ImageIcon createImageIcon(String path) {
-	    java.net.URL imgURL = getClass().getResource(path);
-	    if (imgURL != null) {
-	        return new ImageIcon(imgURL);
-	    } else {
-	        System.err.println("Couldn't find file: " + path);
-	        return null;
-	    }
 	}
 }

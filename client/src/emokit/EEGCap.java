@@ -23,7 +23,7 @@ public class EEGCap extends Sensor{
 	 */
 	public EEGCap(String name, int value) {
 		super(name, value);
-		init_freqs(getBinCount());
+		init_freqs(EmoConst.getBinCount(false));
 		isCap = true;
 	}
 	
@@ -101,7 +101,11 @@ public class EEGCap extends Sensor{
 	 * @return
 	 */
 	public double[] getFreqs(){
-		return freqs;
+		double[] bins = new double[freqs.length];
+		for(int i=0 ; i<bins.length ; i++){
+			bins[i] = freqs[i];
+		}
+		return bins;
 	}
 	
 	/**
@@ -112,20 +116,9 @@ public class EEGCap extends Sensor{
 		int n = freqs.length;
 		Instance bins = new DenseInstance(n);
 		for(int i=0 ; i<n ; i++){
-			bins.add(freqs[i]);
+			bins.put(i, freqs[i]);
 		}
 		return bins;
 	}
 	
-	/**
-	 * Computes the number of bins the fft buffer is going to have.
-	 * @return
-	 */
-	private int getBinCount(){
-		int rate = EmoConst.SAMPLE_RATE;
-		int size = EmoConst.FFT_BUFFER_SIZE;
-		double resolution = ((double) rate) / ((double) size);
-		return (int) (rate/2/resolution + 1);
-	}
-
 }

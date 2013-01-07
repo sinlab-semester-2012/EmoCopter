@@ -26,4 +26,11 @@ public class InfoSensor extends Sensor{
 	public Instance getBinsInstance() throws WrongSensorException {
 		throw new WrongSensorException();
 	}
+	
+	/**
+	 * 
+	 */
+	public double[] getFreqs() throws WrongSensorException {
+		throw new WrongSensorException();
+	}
 }

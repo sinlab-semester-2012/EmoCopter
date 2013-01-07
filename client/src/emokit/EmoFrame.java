@@ -3,9 +3,11 @@ package emokit;
 import net.sf.javaml.core.*;
 import constants.EmoConst;
 import exceptions.*;
+import feature_extraction.Features;
 
 public class EmoFrame {
 	// frame has a fixed size and should neither shrink nor grow.
+	private boolean frameType = false;
 	private Sensor[] frame = new Sensor[EmoConst.NUMBER_OF_SENSORS];
 	private int numberOfCaps = 0;
 	private int numberOfInfo = 0;
@@ -14,11 +16,17 @@ public class EmoFrame {
 	
 	/**
 	 * Constructs an empty EmoFrame.
+	 * @param frameType - true indicates a learning frame, false a normal one.
 	 */
-	public EmoFrame(){
+	public EmoFrame(boolean frameType){
+		this.frameType = frameType;
 		for(int sensor=0 ; sensor<frame.length ; sensor++){
 			if(sensor < EmoConst.NUMBER_OF_EEG_CAPS){
-				frame[sensor] = new EEGCap(EmoConst.SENSOR_NAMES[sensor]);
+				if(frameType){
+					frame[sensor] = new EEGCap(sensor, 0, new double[EmoConst.getBinCount(frameType)]);
+				} else {
+					frame[sensor] = new EEGCap(EmoConst.SENSOR_NAMES[sensor]);
+				}
 			} else {
 				frame[sensor] = new InfoSensor(EmoConst.SENSOR_NAMES[sensor]);
 			}
@@ -71,8 +79,7 @@ public class EmoFrame {
 				if(isFull) throw new FullFrameException("Sensors are aleady full.");
 				numberOfCaps++;
 				if(numberOfCaps >= frame.length - EmoConst.sensorDiff) isFull = true;
-			}
-			else {
+			} else {
 				if(infoSet) throw new FullFrameException("Info is already set.");
 				numberOfInfo++;
 				if(numberOfInfo >= EmoConst.sensorDiff) infoSet = true;
@@ -172,12 +179,11 @@ public class EmoFrame {
 	 * @param withInfo says whether to include gyro and battery info.
 	 * @return the data instance.
 	 */
-	public Instance getInstance(boolean withInfo){
+	public Instance getInstance(){
 		int n = EmoConst.NUMBER_OF_EEG_CAPS;
-		if(withInfo) n = EmoConst.NUMBER_OF_SENSORS;
 		Instance instance = new DenseInstance(n);
-		for(int i = 0 ; i<n ; i++){
-			instance.add(frame[i].value());
+		for(int sensor = 0 ; sensor<n ; sensor++){
+			instance.put(sensor, (double)frame[sensor].value());
 		}
 		return instance;
 	}
@@ -234,6 +240,32 @@ public class EmoFrame {
 			index = i;
 		}
 		return index;
+	}
+	
+	/**
+	 * Extract powers from theta, alpha, beta and gamma bands.
+	 * @param sensor
+	 * @return
+	 */
+	public double[] extractPowers(int sensor){
+		int seconds = 1;
+		if(frameType) seconds = EmoConst.FFT_SIZE_RATIO;
+		double[] bins = null;
+		try {
+			bins = frame[sensor].getFreqs();
+		} catch (WrongSensorException e) {
+			e.printStackTrace();
+		}
+		double[] theta = Features.theta(bins, seconds);
+		double[] alpha = Features.alpha(bins, seconds);
+		double[] beta = Features.beta(bins, seconds);
+		double[] gamma = Features.gamma(bins, seconds);
+		double thetaPower = Features.bandPower(theta, seconds);
+		double alphaPower = Features.bandPower(alpha, seconds);
+		double betaPower = Features.bandPower(beta, seconds);
+		double gammaPower = Features.bandPower(gamma, seconds);
+		
+		return new double[]{thetaPower, alphaPower, betaPower, gammaPower};
 	}
 	
 	/**

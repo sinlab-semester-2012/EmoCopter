@@ -1,4 +1,4 @@
-package learning;
+package neural_network;
 
 /**
  * one-layer n-neuron (dimensioned) perceptron

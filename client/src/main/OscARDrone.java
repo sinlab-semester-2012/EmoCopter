@@ -3,14 +3,16 @@ package main;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Date;
 
 import javax.swing.JFileChooser;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 import mapping.KeyControl;
-import net.sf.javaml.core.Dataset;
-import net.sf.javaml.core.DefaultDataset;
+import net.sf.javaml.classification.Classifier;
+import net.sf.javaml.classification.KNearestNeighbors;
+import net.sf.javaml.core.*;
 import net.sf.javaml.tools.data.FileHandler;
 
 import oscP5.*;
@@ -46,21 +48,25 @@ public class OscARDrone extends PApplet{
 	private boolean showPlots = false;
 	private boolean showGyro = false;
 	private boolean recordData = false;
-	private boolean loadData = false;		//TODO
-	private boolean saveData = false;		//TODO
+	private boolean listen = false;
+	private long timeReference;
+	private boolean[] literateClassifiers;
 	private int frameWidth;
 	private int frameHeight;
 	private ArrayList<EmoFrame> frameBuffer;
 	private int frameBufferIndex = 0;
 	private Dataset sensorData;
 	private Dataset[] freqData;
+	private Classifier classifier;
+	private Dataset learningData;
+	private boolean classifierIsLiterate = false;
 	private FFTDataBuffer[] fftBuffer;
 	private EmoFrame buffer;
 	private ARDRoneSpeller speller;
 	private ARDroneSpellerGrid spellerGrid; 
 	//Plots the fft of a few chosen cap sensors.
-	private String[] selectedSensors = {"", "", "P7", "", "", "", "", "P8", "", "", "", "", "", ""};
-	//private String[] selectedSensors = {"F3", "FC6", "P7", "T8", "F7", "F8", "T7", "P8", "AF4", "F4", "AF3", "O2", "O1", "FC5"};
+	//private String[] selectedSensors = {"", "", "P7", "", "", "", "", "P8", "", "", "", "", "", ""};
+	private String[] selectedSensors = {"F3", "FC6", "P7", "T8", "F7", "F8", "T7", "P8", "AF4", "F4", "AF3", "O2", "O1", "FC5"};
 	private FFTPlot[] fftplot = new FFTPlot[EmoConst.NUMBER_OF_EEG_CAPS];
 	private RawSignalPlot rawSignalPlotP7;
 	private RawSignalPlot rawSignalPlotP8;
@@ -93,15 +99,19 @@ public class OscARDrone extends PApplet{
 	private void init_env(){
 		//if(loadData) loadData();
 		frameBuffer = new ArrayList<EmoFrame>();
-		frameBuffer.add(new EmoFrame());
+		frameBuffer.add(new EmoFrame(false));
 		sensorData = new DefaultDataset();
 		freqData = new Dataset[EmoConst.NUMBER_OF_EEG_CAPS];
+		classifier = new KNearestNeighbors(EmoConst.COMMANDS.length + 1);
+		learningData = new DefaultDataset();
+		literateClassifiers = new boolean[EmoConst.COMMANDS.length];
+		for(int i=0 ; i<EmoConst.COMMANDS.length ; i++) literateClassifiers[i] = false;
 		fftBuffer = new FFTDataBuffer[EmoConst.NUMBER_OF_EEG_CAPS];
-		buffer = new EmoFrame();
+		buffer = new EmoFrame(false);
 		for(int sensor=0 ; sensor<EmoConst.NUMBER_OF_SENSORS ; sensor++){
 			if(sensor < EmoConst.NUMBER_OF_EEG_CAPS){
 				freqData[sensor] = new DefaultDataset();
-				fftBuffer[sensor] = new FFTDataBuffer(EmoConst.FFT_BUFFER_SIZE, EmoConst.SAMPLE_RATE);
+				fftBuffer[sensor] = new FFTDataBuffer(EmoConst.TRIAL_FFT_SIZE, EmoConst.SAMPLE_RATE);
 			}
 		}
 	}
@@ -111,16 +121,16 @@ public class OscARDrone extends PApplet{
 	 */
 	private void plots_init(){
 		rawSignalPlotP7 = new RawSignalPlot(EmoConst.SAMPLE_RATE);
-		rawSignalPlotP7.setYExtrema(EmoConst.USUALMIN, EmoConst.USUALMAX);
+		rawSignalPlotP7.setYExtrema(GUIConst.usualMin, GUIConst.USUALMAX);
 		rawSignalPlotP7.setSize(GUIConst.screenW, GUIConst.screenH/2-5);
 		rawSignalPlotP7.setLocation(0, 10);
 		rawSignalPlotP8 = new RawSignalPlot(EmoConst.SAMPLE_RATE);
-		rawSignalPlotP8.setYExtrema(EmoConst.USUALMIN, EmoConst.USUALMAX);
+		rawSignalPlotP8.setYExtrema(GUIConst.usualMin, GUIConst.USUALMAX);
 		rawSignalPlotP8.setSize(GUIConst.screenW, GUIConst.screenH/2-5);
 		rawSignalPlotP8.setLocation(0, GUIConst.screenH/2+5);
 		int[][] plotsGrid = setPlotsGrid();
 		for(int sensor=0 ; sensor<EmoConst.NUMBER_OF_EEG_CAPS ; sensor++){
-			fftplot[sensor] = new FFTPlot(EmoConst.FFT_BUFFER_SIZE, EmoConst.SAMPLE_RATE);
+			fftplot[sensor] = new FFTPlot(EmoConst.TRIAL_FFT_SIZE, EmoConst.SAMPLE_RATE);
 			fftplot[sensor].setTitle(EmoConst.SENSOR_NAMES[sensor]);
 			fftplot[sensor].setSize(plotsGrid[EmoConst.NUMBER_OF_EEG_CAPS][0], plotsGrid[EmoConst.NUMBER_OF_EEG_CAPS][1]);
 			fftplot[sensor].setLocation(plotsGrid[sensor][0], plotsGrid[sensor][1]);
@@ -138,11 +148,10 @@ public class OscARDrone extends PApplet{
 		int width = 300;
 		int height = 200;
 		int n = EmoConst.NUMBER_OF_EEG_CAPS;
-		java.awt.Dimension dim = java.awt.Toolkit.getDefaultToolkit().getScreenSize();
 		int x = 0, y = 10;
 		int[][] grid = new int[n+1][2];
 		for (int i = 0 ; i < n ; i++){
-			if (x > dim.width - width) {
+			if (x > GUIConst.screenW - width) {
 				y += height;
 				x = 0;
 			}
@@ -155,11 +164,16 @@ public class OscARDrone extends PApplet{
 	}
 	
 	/**
+	 * TODO saveDataset, loadDataset and recordSensorData should be adapted to the way
+	 * a classifier gets instances (ie vectors).
+	 */
+	
+	/**
 	 * Saves the sensor data as well as each specific sensor frequency data.
 	 */
-	private void saveDataset(){	// TODO no values or zero values
+	private void saveDataset(){
 		try {
-			long filename_ext = (new java.util.Date()).getTime();
+			long filename_ext = (new Date()).getTime();
 			File file = new File(pathToDatasets + "emocopter_"+user+"_sensor_"+filename_ext+".data");
 			if(!file.getParentFile().exists()) file.getParentFile().mkdir();
 			FileHandler.exportDataset(sensorData, file);
@@ -182,7 +196,7 @@ public class OscARDrone extends PApplet{
 			JFileChooser fileChooser = new JFileChooser(pathToDatasets);
 			fileChooser.setFileFilter(filter);
 			fileChooser.showOpenDialog(this);
-			sensorData = FileHandler.loadDataset(fileChooser.getSelectedFile(), 0, ",");
+			sensorData = FileHandler.loadDataset(fileChooser.getSelectedFile(), 0, "\t");
 		} catch (IOException e) {
 			System.out.println("No data to load, you should start from scratch.");
 			e.printStackTrace();
@@ -199,13 +213,87 @@ public class OscARDrone extends PApplet{
 	private void recordSensorData(int sensor, int data, double[] freqBins) throws FullFrameException{
 		EmoFrame currentFrame = frameBuffer.get(frameBufferIndex);
 		if(currentFrame.isFull()){
-			sensorData.add(currentFrame.getInstance(false));
+			sensorData.add(currentFrame.getInstance());
 			frameBufferIndex+=1;
-			frameBuffer.add(new EmoFrame());
+			frameBuffer.add(new EmoFrame(false));
 			recordSensorData(sensor, data, freqBins);
 		} else {
 			currentFrame.put(new EEGCap(sensor, data, freqBins));
 		}
+	}
+	
+	/**
+	 * The learn method has to be called a certain number of times, that is equal to the number
+	 * of commands you want the classifier to learn.
+	 */
+	private void learn(){
+		int command=0;
+		while(command<literateClassifiers.length && literateClassifiers[command]) { command++; }
+		if(command < EmoConst.COMMANDS.length){
+			System.out.println("Learning command: " + EmoConst.COMMANDS[command] +
+					" in a few seconds for " + EmoConst.FFT_SIZE_RATIO + " seconds.");
+			/* We have to create a new fft buffer with a new size for learning, so we have to
+			 * make a new frame also. We then save current buffers and frames in temporary objects
+			 * and restore them when done. */
+			FFTDataBuffer[] learningBuffers = new FFTDataBuffer[EmoConst.NUMBER_OF_EEG_CAPS];
+			for(int sensor=0 ; sensor<EmoConst.NUMBER_OF_EEG_CAPS ; sensor++){
+				learningBuffers[sensor] = new FFTDataBuffer(EmoConst.LEARNING_FFT_SIZE, EmoConst.SAMPLE_RATE);
+			}
+			FFTDataBuffer[] tmpBuffer = fftBuffer;
+			fftBuffer = learningBuffers;
+			EmoFrame learningFrame = new EmoFrame(true);
+			EmoFrame tmpFrame = buffer;
+			buffer = learningFrame;
+			
+			/* WAITING TIME, this is to avoid having wrong data */
+			long time = (new Date()).getTime();
+			// wait for a few seconds for subject to settle down
+			while((new Date()).getTime() - time < EmoConst.SETTLE_TIME * 1000){}
+			time = (new Date()).getTime();
+			// wait for data to be collected
+			while((new Date()).getTime() - time < EmoConst.FFT_SIZE_RATIO*1000 + 500){}
+			
+			Instance powerInstance = flattenPowerMatrix(learningFrame, EmoConst.COMMANDS[command]);
+			learningData.add(command, powerInstance);
+			
+			fftBuffer = tmpBuffer;
+			buffer = tmpFrame;
+			literateClassifiers[command] = true;
+			System.out.println("Learning " + EmoConst.COMMANDS[command] + " => Done");
+			
+			/* All data has been collected, time to teach this classifier how to behave */
+			if(command == EmoConst.COMMANDS.length - 1){
+				classifier.buildClassifier(learningData);
+				classifierIsLiterate = true;
+			}
+		}
+	}
+	
+	/**
+	 * An Instance should be a vector, so this methods allows you to extract powers
+	 * from a frame and sort them into a single vector.
+	 * @param frame
+	 * @param className - when learning new instances, a className has to be provided
+	 * 		in order to classify learning material. But when submitting online instances
+	 * 		this field can be set to null so that the created instance doesn't have a 
+	 * 		className.
+	 * @return
+	 */
+	private Instance flattenPowerMatrix(EmoFrame frame, String className){
+		int powerIndex = 0;
+		int powerIndexBound = EmoConst.TAKE_N_BANDS;
+		double powers[] = new double[EmoConst.TAKE_N_BANDS * EmoConst.NUMBER_OF_EEG_CAPS];
+		for(int sensor=0 ; sensor<EmoConst.NUMBER_OF_EEG_CAPS ; sensor++){
+			double[] sensorPowers = frame.extractPowers(sensor);
+			int i=0;
+			for(; powerIndex<powerIndexBound ; powerIndex++){
+				powers[powerIndex] = sensorPowers[i];
+				i++;
+			}
+			powerIndexBound += EmoConst.TAKE_N_BANDS;
+		}
+		if(className == null) return new DenseInstance(powers);
+		else return new DenseInstance(powers, className);
 	}
 	
 	/**
@@ -302,8 +390,14 @@ public class OscARDrone extends PApplet{
 		}
 		
 		/*
-		 * TODO Get speller data
+		 * Listening to brain waves and taking action where needed.
 		 */
+		if(listen && (new Date()).getTime() - timeReference >= EmoConst.TRIAL_INTERVAL * 1000){
+			Instance currentInstance = flattenPowerMatrix(buffer, null);
+			Object predictedClass = classifier.classify(currentInstance);
+			System.out.println(predictedClass.toString());
+			timeReference = (new Date()).getTime();
+		}
 
 		/*
 		 * Drawing EPOC data and info
@@ -348,6 +442,8 @@ public class OscARDrone extends PApplet{
 					"    '8': show Help\n" +
 					"    'p': show FFT Plots\n" +
 					"    '9': show contact quality\n" +
+					"    'o': load dataset\n" +
+					"    'l': learn/start listening to your brain\n" +
 					"  Controls:\n" +
 					"    Arrow UP: forward\n" +
 					"    Arrow DOWN: backward\n" +
@@ -414,6 +510,14 @@ public class OscARDrone extends PApplet{
 			}
 			rawSignalPlotP7.setVisible(showPlots);
 			rawSignalPlotP8.setVisible(showPlots);
+			break;
+		case 'o':	loadDataset(); break;
+		case 'l':	
+			if(!classifierIsLiterate) learn(); 
+			else {
+				timeReference = (new Date()).getTime();
+				listen ^= true;
+			}
 			break;
 		case '9':	showContactQuality ^= true; break;
 		}

@@ -126,4 +126,12 @@ public class Sensor {
 	public Instance getBinsInstance() throws WrongSensorException {
 		return null;
 	}
+
+	/**
+	 * 
+	 * @return
+	 */
+	public double[] getFreqs() throws WrongSensorException {
+		return null;
+	}
 }

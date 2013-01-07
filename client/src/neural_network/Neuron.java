@@ -1,4 +1,4 @@
-package learning;
+package neural_network;
 
 import java.util.Random;
 

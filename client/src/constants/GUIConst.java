@@ -19,4 +19,6 @@ public class GUIConst {
 	public final static int batteryY = 20;
 	public final static int batterySize = 50;
 	public final static int stdThickness = 20;
+	public final static int usualMin = 7000;
+	public final static int USUALMAX = 10000;
 }

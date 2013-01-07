@@ -1,4 +1,4 @@
-package learning;
+package neural_network;
 
 import java.io.File;
 import java.io.FilenameFilter;
@@ -65,7 +65,7 @@ public class Teacher {
         // and learning n times on each test case
         PixelGrabber pg;
         int[] pixels, x, y;
-        int w, h, k = 0;
+        int w, h = 0;
         while (n-- > 0) {
             for (int j = 0; j < img.length; j++) {
                 w = img[j].getWidth(null);

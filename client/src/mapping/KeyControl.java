@@ -6,11 +6,13 @@ import com.shigeodayo.ardrone.processing.ARDroneForP5;
  * This class provides a mapping for keyboard-sent commands.
  */
 public class KeyControl implements processing.core.PConstants{
-	public static void map(ARDroneForP5 drone, int key, int keyCode){
+	public static void map(ARDroneForP5 drone, Command command){
+		int key = command.key();
+		int keyCode = command.keyCode();
 		switch(key) {
 		case CODED:
 			switch(keyCode) {
-			case UP:			drone.forward(50); break;
+			case UP:		drone.forward(50); break;
 			case DOWN:		drone.backward(50); break;
 			case LEFT:		drone.goLeft(50); break;
 			case RIGHT:		drone.goRight(50); break;

@@ -4,6 +4,7 @@ public class EmoConst {
 	public final static String[] SENSOR_NAMES = {"F3", "FC6", "P7", "T8", "F7", "F8", "T7", "P8", "AF4", "F4", "AF3", "O2", "O1", "FC5", "GyroX", "GyroY", "Battery"};
 	public final static int F3 = 0, FC6 = 1, P7 = 2, T8 = 3, F7 = 4, F8 = 5, T7 = 6, P8 = 7, AF4 = 8, F4 = 9, AF3 = 10, O2 = 11, O1 = 12, FC5 = 13;
 	public final static String[] COMMANDS = {"STOP", "UP", "DOWN", "FORWARD", "SPINLEFT"};
+	public final static int STOP = 0, UP = 1, DOWN = 2, FORWARD = 3, SPINLEFT = 4;
 	//Number of sensors; note that gyroscopes and battery are included.
 	public final static int NUMBER_OF_EEG_CAPS = 14;
 	public final static int NUMBER_OF_SENSORS = SENSOR_NAMES.length;

@@ -9,6 +9,8 @@ import javax.swing.JFileChooser;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
+import mapping.Command;
+import mapping.ConsciousControl;
 import mapping.KeyControl;
 import net.sf.javaml.classification.Classifier;
 import net.sf.javaml.classification.KNearestNeighbors;
@@ -39,6 +41,7 @@ public class OscARDrone extends PApplet{
 	OscP5 oscP5;
 	//private String pathToDatasets = Thread.currentThread().getContextClassLoader().getResource("../datasets/").toString();
 	private String pathToDatasets = "datasets/";
+	private String pathToTrainingData = "data/";
 	// TODO update to ARDroneForP5 2.0, see Nikita's work: https://github.com/MGrin/Quadrokinect
 	private ARDroneForP5 ardrone;
 	private boolean isConnected = false;
@@ -79,9 +82,9 @@ public class OscARDrone extends PApplet{
 		noStroke();
 		frameRate(25);
 		init_env();
-		spellerGrid = new ARDroneSpellerGrid();
+		/*spellerGrid = new ARDroneSpellerGrid();
 		speller = new ARDRoneSpeller(spellerGrid);
-		speller.start();
+		speller.start();*/
 		
 		oscP5 = new OscP5(this, 7000);
 		/*ardrone=new ARDroneForP5("192.168.1.1");
@@ -191,16 +194,46 @@ public class OscARDrone extends PApplet{
 	 * Load an existing dataset from the 'datasets' folder.
 	 */
 	private void loadDataset(){
+		FileFilter filter = new FileNameExtensionFilter("Dataset files", "data", "DATA");
+		sensorData = openDataset(filter, pathToDatasets);
+	}
+	
+	/**
+	 * Load an existing dataset and build classifier with it.
+	 */
+	private void loadTrainingFile(){
+		FileFilter filter = new FileNameExtensionFilter("Training Data File", "tdf", "TDF");
+		learningData = openDataset(filter, pathToTrainingData);
+		classifier.buildClassifier(learningData);
+		classifierIsLiterate = true;
+	}
+	
+	// TODO this thing doesn't work, it freezes everything
+	/**
+	 * Generic method for opening datasets.
+	 * @param filter
+	 * @param preferredPath
+	 * @return
+	 */
+	private Dataset openDataset(FileFilter filter, String preferredPath){
+		Dataset dataset = null;
 		try {
-			FileFilter filter = new FileNameExtensionFilter("Dataset files", "data", "DATA");
-			JFileChooser fileChooser = new JFileChooser(pathToDatasets);
+			final JFileChooser fileChooser = new JFileChooser();
+			fileChooser.setDialogTitle("Choose a file");
+			fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
 			fileChooser.setFileFilter(filter);
-			fileChooser.showOpenDialog(this);
-			sensorData = FileHandler.loadDataset(fileChooser.getSelectedFile(), 0, "\t");
+			fileChooser.setCurrentDirectory(new File(preferredPath));
+			int returned = fileChooser.showOpenDialog(null);
+			if(returned == JFileChooser.APPROVE_OPTION){
+				dataset = FileHandler.loadDataset(fileChooser.getSelectedFile());
+			}
 		} catch (IOException e) {
 			System.out.println("No data to load, you should start from scratch.");
 			e.printStackTrace();
+		} catch (Exception e){
+			e.printStackTrace();
 		}
+		return dataset;
 	}
 	
 	/**
@@ -265,6 +298,14 @@ public class OscARDrone extends PApplet{
 			if(command == EmoConst.COMMANDS.length - 1){
 				classifier.buildClassifier(learningData);
 				classifierIsLiterate = true;
+				/* Training Data File */
+				try {
+					File trainingData = new File(pathToTrainingData + "training_" + user + "_" + (new Date()).getTime() + ".tdf");
+					if(!trainingData.getParentFile().exists()) trainingData.getParentFile().mkdir();
+					FileHandler.exportDataset(learningData, trainingData);
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
 			}
 		}
 	}
@@ -394,9 +435,14 @@ public class OscARDrone extends PApplet{
 		 */
 		if(listen && (new Date()).getTime() - timeReference >= EmoConst.TRIAL_INTERVAL * 1000){
 			Instance currentInstance = flattenPowerMatrix(buffer, null);
-			Object predictedClass = classifier.classify(currentInstance);
-			System.out.println(predictedClass.toString());
+			Object predictedCommand = classifier.classify(currentInstance);
 			timeReference = (new Date()).getTime();
+			System.out.println(timeReference + " -> " + predictedCommand);
+			try{
+				ConsciousControl.map(ardrone, new Command(predictedCommand.toString()));
+			} catch (NullPointerException e){
+				System.out.println("There probably is no ardrone connection.");
+			}
 		}
 
 		/*
@@ -443,6 +489,7 @@ public class OscARDrone extends PApplet{
 					"    'p': show FFT Plots\n" +
 					"    '9': show contact quality\n" +
 					"    'o': load dataset\n" +
+					"    'k': load existing training data\n" +
 					"    'l': learn/start listening to your brain\n" +
 					"  Controls:\n" +
 					"    Arrow UP: forward\n" +
@@ -483,7 +530,7 @@ public class OscARDrone extends PApplet{
 	 */
 	public void keyPressed() {
 		
-		if(isConnected) KeyControl.map(ardrone, key, keyCode);
+		if(isConnected) KeyControl.map(ardrone, new Command(key, keyCode));
 		switch (key){
 		case ENTER:
 			recordData ^= true;
@@ -512,6 +559,7 @@ public class OscARDrone extends PApplet{
 			rawSignalPlotP8.setVisible(showPlots);
 			break;
 		case 'o':	loadDataset(); break;
+		case 'k':	loadTrainingFile(); break;
 		case 'l':	
 			if(!classifierIsLiterate) learn(); 
 			else {
@@ -527,6 +575,6 @@ public class OscARDrone extends PApplet{
 	 * Makes sure the drone stops as soon as no key is pressed.
 	 */
 	public void keyReleased(){
-		if(isConnected) KeyControl.map(ardrone, WAIT, keyCode);
+		if(isConnected) KeyControl.map(ardrone, new Command(WAIT, keyCode));
 	}
 }
